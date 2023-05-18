@@ -1,0 +1,46 @@
+service: aws-layer
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ap-south-1
+  environment:
+    NODE_PATH: "/opt/nodejs/node_modules"
+
+plugins:
+  - serverless-offline
+
+package:
+  individually: true
+  excludeDevDependencies: true
+  patterns:
+    - "!*.md"
+
+layers:
+  AxiosNodeModule:
+    path: layers/axios
+    description: "Axios layer"
+
+custom:
+  region: ${self:provider.region}
+  stage: ${opt:stage, self:provider.stage}
+
+functions:
+  get-joke:
+    handler: functions/joke.handler
+    events:
+      - http:
+          method: get
+          path: /joke
+    package:
+      patterns:
+        - "!layers/**"
+        - "!node_modules/**"
+        - "!functions/**"
+        - "libs/**"
+        - "functions/joke.js"
+        - "!*.json"
+    layers:
+      - { Ref: AxiosNodeModuleLambdaLayer }
